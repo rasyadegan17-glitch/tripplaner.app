@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-# ==============================================================================
-# BAGIAN 1: CLASS PLANNER (MODEL)
-# ==============================================================================
 class Planner:
     # PERHATIKAN: Ada 2 garis bawah sebelum 'init' dan 2 sesudahnya.
     # def _init_ (bukan init)
@@ -203,6 +200,7 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
 
 
