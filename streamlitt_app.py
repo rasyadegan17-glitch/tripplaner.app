@@ -1,195 +1,173 @@
 import streamlit as st
+from datetime import date, timedelta
 
-# ============================================
-#                  OOP CLASSES
-# ============================================
+# --- BAGIAN 1: STRUKTUR OOP (MODEL) ---
 
-class Activity:
-    # PERBAIKAN: Gunakan _init_ (double underscore)
-    def _init_(self, name, cost, duration):
-        self.name = name
-        self.cost = cost
-        self.duration = duration
+class TransportBooking:
+    """
+    Parent Class (Kelas Induk).
+    Menyimpan atribut dasar yang dimiliki semua jenis transportasi:
+    Asal, Tujuan, Tanggal, dan Jumlah Penumpang.
+    """
+    def _init_(self, booking_type, sub_type):
+        self.booking_type = booking_type # e.g., Pesawat
+        self.sub_type = sub_type         # e.g., Domestik
+        self.origin = ""
+        self.destination = ""
+        self.depart_date = date.today()
+        self.return_date = None
+        self.passengers = 1
 
-    # PERBAIKAN: Gunakan _str_ (double underscore)
-    def _str_(self):
-        return f"{self.name} - Rp{self.cost} ({self.duration} jam)"
-
-
-class Destination:
-    def _init_(self, name, location):
-        self.name = name
-        self.location = location
-        self.activities = []
-
-    def add_activity(self, activity):
-        self.activities.append(activity)
-
-    def total_cost(self):
-        return sum(a.cost for a in self.activities)
-
-    def _str_(self):
-        return f"{self.name} - {self.location}"
-
-
-class Trip:
-    def _init_(self, trip_id, title):
-        self.trip_id = trip_id
-        self.title = title
-        self.destinations = []
-
-    def add_destination(self, destination):
-        self.destinations.append(destination)
-
-    def total_trip_cost(self):
-        return sum(d.total_cost() for d in self.destinations)
-
-
-class User:
-    def _init_(self, name):
-        self.name = name
-        self.trips = []
-
-    def add_trip(self, trip):
-        self.trips.append(trip)
-
-
-# ============================================
-#           STREAMLIT STATE MANAGEMENT
-# ============================================
-
-if "user" not in st.session_state:
-    st.session_state.user = User("User")
-
-user = st.session_state.user
-
-st.title("🌍 Trip Planner Sederhana (Streamlit + OOP)")
-
-
-# ============================================
-#             MENU NAVIGASI
-# ============================================
-menu = st.sidebar.radio(
-    "Pilih Menu",
-    ["Buat Trip", "Tambah Destinasi", "Tambah Aktivitas", "Lihat Trip"]
-)
-
-# ============================================
-#               BUAT TRIP BARU
-# ============================================
-if menu == "Buat Trip":
-    st.header("➕ Buat Trip Baru")
-
-    with st.form("form_trip"):
-        trip_id = st.text_input("ID Trip")
-        title = st.text_input("Judul Trip")
-        submit = st.form_submit_button("Buat Trip")
-
-        if submit:
-            if trip_id and title:
-                new_trip = Trip(trip_id, title)
-                user.add_trip(new_trip)
-                st.success(f"Trip '{title}' berhasil dibuat!")
-            else:
-                st.warning("Isi semua form dulu!")
-
-
-# ============================================
-#          TAMBAH DESTINASI KE TRIP
-# ============================================
-elif menu == "Tambah Destinasi":
-    st.header("🏝 Tambah Destinasi ke Trip")
-
-    if not user.trips:
-        st.warning("Belum ada trip. Buat dulu di menu 'Buat Trip'.")
-    else:
-        trip_selected = st.selectbox(
-            "Pilih Trip",
-            user.trips,
-            format_func=lambda t: f"{t.trip_id} - {t.title}"
-        )
-
-        with st.form("form_destinasi"):
-            name = st.text_input("Nama Destinasi")
-            loc = st.text_input("Lokasi")
-            submit = st.form_submit_button("Tambah Destinasi")
-
-            if submit:
-                if name and loc:
-                    d = Destination(name, loc)
-                    trip_selected.add_destination(d)
-                    st.success(f"Destinasi '{name}' ditambahkan!")
-                else:
-                    st.warning("Nama dan Lokasi harus diisi.")
-
-
-# ============================================
-#         TAMBAH AKTIVITAS KE DESTINASI
-# ============================================
-elif menu == "Tambah Aktivitas":
-    st.header("🎯 Tambah Aktivitas ke Destinasi")
-
-    if not user.trips:
-        st.warning("Belum ada trip.")
-    else:
-        # Pilih Trip Dulu
-        trip_selected = st.selectbox(
-            "Pilih Trip",
-            user.trips,
-            format_func=lambda t: f"{t.trip_id} - {t.title}"
-        )
-
-        if not trip_selected.destinations:
-            st.warning("Trip ini belum punya destinasi. Tambahkan destinasi dulu.")
+    def set_details(self, origin, destination, dates, passengers):
+        self.origin = origin
+        self.destination = destination
+        self.passengers = passengers
+        
+        # Logika menangani tanggal (sekali jalan vs pulang pergi)
+        if isinstance(dates, tuple) and len(dates) == 2:
+            self.depart_date = dates[0]
+            self.return_date = dates[1]
+        elif isinstance(dates, tuple) and len(dates) == 1:
+            self.depart_date = dates[0]
+            self.return_date = None
         else:
-            # Pilih Destinasi di dalam Trip tersebut
-            dest_selected = st.selectbox(
-                "Pilih Destinasi",
-                trip_selected.destinations,
-                format_func=lambda d: f"{d.name} - {d.location}"
-            )
+            self.depart_date = dates
+            self.return_date = None
 
-            with st.form("form_aktivitas"):
-                name = st.text_input("Nama Aktivitas")
-                cost = st.number_input("Biaya (Rp)", min_value=0, step=1000)
-                duration = st.number_input("Durasi (jam)", min_value=0.0, step=0.5)
-                submit = st.form_submit_button("Tambah Aktivitas")
-
-                if submit:
-                    if name:
-                        act = Activity(name, cost, duration)
-                        dest_selected.add_activity(act)
-                        st.success(f"Aktivitas '{name}' berhasil ditambahkan!")
-                    else:
-                        st.warning("Nama aktivitas harus diisi.")
-
-
-# ============================================
-#                LIHAT SEMUA TRIP
-# ============================================
-elif menu == "Lihat Trip":
-    st.header("📋 Daftar Trip")
-
-    if not user.trips:
-        st.warning("Belum ada trip.")
-    else:
-        for t in user.trips:
-            st.markdown("---")
-            st.subheader(f"🧳 {t.title} (ID: {t.trip_id})")
+    def display_ticket_summary(self):
+        """Method untuk menampilkan hasil booking (Polymorphism placeholder)"""
+        st.success(f"✅ Tiket {self.booking_type} ({self.sub_type}) Berhasil Dipesan!")
+        st.write(f"*Rute:* {self.origin} ➡ {self.destination}")
+        
+        date_str = f"{self.depart_date}"
+        if self.return_date:
+            date_str += f" s/d {self.return_date}"
             
-            total_biaya = t.total_trip_cost()
+        st.write(f"*Tanggal:* {date_str}")
+        st.write(f"*Penumpang:* {self.passengers} Orang")
 
-            if not t.destinations:
-                st.caption("Belum ada destinasi.")
-            else:
-                for d in t.destinations:
-                    st.markdown(f"📍 {d.name}** ({d.location})")
-                    st.markdown(f"&nbsp;&nbsp;&nbsp;Biaya Destinasi: Rp{d.total_cost()}")
+# --- BAGIAN 2: UI & LOGIC (VIEW CONTROLLER) ---
 
-                    if not d.activities:
-                        st.write("&nbsp;&nbsp;&nbsp;• Belum ada aktivitas")
-                    else:
-                        for a in d.activities:
-                            st.write(f"&nbsp;&nbsp;&nbsp;• {a}") # Ini memanggil _str_ Activity
+class TravelAppUI:
+    """Class untuk mengatur Tampilan Antarmuka Streamlit"""
+    
+    def _init_(self):
+        self.apply_custom_style()
 
-            st.info(f"💰 *Total Biaya Trip: Rp{total_biaya:,}*")
+    def apply_custom_style(self):
+        """Menambahkan CSS untuk background Orange Gradiasi"""
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background: linear-gradient(to right, #ff7e5f, #feb47b);
+                color: black;
+            }
+            /* Styling container agar lebih kontras dengan background oren */
+            .stTabs [data-baseweb="tab-list"] {
+                gap: 10px;
+            }
+            .stTabs [data-baseweb="tab"] {
+                background-color: white;
+                border-radius: 5px;
+                padding: 10px 20px;
+                color: #ff7e5f;
+                font-weight: bold;
+            }
+            .stTabs [aria-selected="true"] {
+                background-color: #e65100 !important;
+                color: white !important;
+            }
+            div[data-testid="stExpander"] {
+                background-color: rgba(255, 255, 255, 0.9);
+                border-radius: 10px;
+                padding: 20px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+    def render_common_inputs(self, key_prefix):
+        """
+        Input form standar (Asal, Tujuan, Tanggal, Penumpang).
+        Digunakan ulang untuk semua tab (DRY Principle).
+        """
+        col1, col2 = st.columns(2)
+        with col1:
+            origin = st.text_input("Dari (Kota Asal)", placeholder="Contoh: Jakarta", key=f"{key_prefix}_org")
+        with col2:
+            dest = st.text_input("Ke (Kota Tujuan)", placeholder="Contoh: Singapura", key=f"{key_prefix}_dest")
+
+        col3, col4 = st.columns(2)
+        with col3:
+            # Input tanggal support range (pergi - pulang)
+            travel_dates = st.date_input(
+                "Tanggal Pergi & Pulang",
+                (date.today(), date.today() + timedelta(days=3)),
+                key=f"{key_prefix}_date"
+            )
+            st.caption("*Pilih rentang tanggal untuk Pulang-Pergi")
+        with col4:
+            passengers = st.number_input("Jumlah Penumpang", min_value=1, max_value=10, value=1, key=f"{key_prefix}_pax")
+
+        return origin, dest, travel_dates, passengers
+
+    def run(self):
+        st.title("🌏 Trip Planner App")
+        st.markdown("### Pilihan utama untuk jelajahi dunia")
+
+        # Menggunakan Tab untuk kategori utama
+        tab_pesawat, tab_kereta, tab_bus = st.tabs(["✈ Tiket Pesawat", "🚆 Tiket Kereta Api", "🚌 Tiket Bus & Travel"])
+
+        # --- TAB 1: PESAWAT ---
+        with tab_pesawat:
+            with st.container(): # Container putih transparan (via CSS trick di atas, atau expander)
+                st.markdown("#### Pengaturan Penerbangan")
+                # Sub-menu Pesawat
+                flight_type = st.radio("Tipe Penerbangan:", ["Domestic", "International"], horizontal=True)
+                
+                st.divider()
+                origin, dest, dates, pax = self.render_common_inputs("flight")
+                
+                if st.button("Cari Penerbangan", type="primary"):
+                    # Membuat Objek TransportBooking
+                    booking = TransportBooking("Pesawat", flight_type)
+                    booking.set_details(origin, dest, dates, pax)
+                    st.divider()
+                    booking.display_ticket_summary()
+
+        # --- TAB 2: KERETA API ---
+        with tab_kereta:
+            st.markdown("#### Pengaturan Kereta")
+            # Sub-menu Kereta
+            train_type = st.radio("Tipe Kereta:", ["Whoosh", "Intercity", "Airport"], horizontal=True)
+            
+            st.divider()
+            origin, dest, dates, pax = self.render_common_inputs("train")
+            
+            if st.button("Cari Kereta Api", type="primary"):
+                booking = TransportBooking("Kereta Api", train_type)
+                booking.set_details(origin, dest, dates, pax)
+                st.divider()
+                booking.display_ticket_summary()
+
+        # --- TAB 3: BUS & TRAVEL ---
+        with tab_bus:
+            st.markdown("#### Pengaturan Bus & Shuttle")
+            # Sub-menu Bus
+            bus_type = st.radio("Tipe Bus:", ["Airport", "Shuttle"], horizontal=True)
+            
+            st.divider()
+            origin, dest, dates, pax = self.render_common_inputs("bus")
+            
+            if st.button("Cari Bus / Travel", type="primary"):
+                booking = TransportBooking("Bus & Travel", bus_type)
+                booking.set_details(origin, dest, dates, pax)
+                st.divider()
+                booking.display_ticket_summary()
+
+# --- MAIN EXECUTION ---
+if _name_ == "_main_":
+    app = TravelAppUI()
+    app.run()
