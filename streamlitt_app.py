@@ -174,6 +174,7 @@ class TravelAppUI:
 # ==========================================
 # EKSEKUSI PROGRAM
 # ==========================================
-if _name_ == "_main_":
+if __name__ == "_main_":
     app = TravelAppUI()
     app.run()
+
