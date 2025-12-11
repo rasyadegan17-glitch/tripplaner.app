@@ -3,14 +3,11 @@ import pandas as pd
 from datetime import datetime
 
 class Planner:
-    # PERHATIKAN: Ada 2 garis bawah sebelum 'init' dan 2 sesudahnya.
-    # def _init_ (bukan init)
     def __init__(self, tujuan, tanggal, aktivitas):
         self._tujuan = tujuan
         self._tanggal = tanggal
         self.aktivitas = aktivitas
 
-    # --- Getters & Setters ---
     @property
     def tujuan(self):
         return self._tujuan
@@ -39,9 +36,6 @@ class Planner:
             "Aktivitas": self.aktivitas
         }
 
-# ==============================================================================
-# BAGIAN 2: CLASS MANAGEMENT (LOGIC)
-# ==============================================================================
 class Management:
     def __init__(self):
         # Menggunakan Session State agar data tersimpan
@@ -62,9 +56,6 @@ class Management:
         if 0 <= index < len(st.session_state['daftar_rencana']):
             st.session_state['daftar_rencana'].pop(index)
 
-# ==============================================================================
-# BAGIAN 3: CLASS PLANNER REPOSITORY (DATA LAYER)
-# ==============================================================================
 class PlannerRepository:
     def __init__(self):
         self.management = Management()
@@ -78,9 +69,6 @@ class PlannerRepository:
     def get_planner(self):
         return self.management
 
-# ==============================================================================
-# BAGIAN 4: CLASS APP (UI / TAMPILAN)
-# ==============================================================================
 class App:
     def __init__(self):
         self.repo = PlannerRepository()
@@ -107,7 +95,6 @@ class App:
         self.proses_pilihan(pilihan)
 
     def proses_pilihan(self, pilihan):
-        # --- FITUR CREATE ---
         if "Create" in pilihan:
             st.subheader("📝 Tambah Rencana Perjalanan Baru")
             with st.form("form_tambah"):
@@ -131,7 +118,6 @@ class App:
                     else:
                         st.error("Mohon isi semua data (Tujuan & Aktivitas).")
 
-        # --- FITUR READ ---
         elif "Read" in pilihan:
             st.subheader("📋 Daftar Rencana Perjalanan Anda")
             data = self.repo.load_data()
@@ -145,8 +131,7 @@ class App:
                 with st.expander("Lihat Detail Deskripsi (Method OOP)"):
                     for i, item in enumerate(data):
                         st.write(f"*Trip #{i+1}:* {item.detail_text()}")
-
-        # --- FITUR UPDATE ---
+                        
         elif "Update" in pilihan:
             st.subheader("✏ Edit Rencana Perjalanan")
             data = self.repo.load_data()
@@ -179,7 +164,6 @@ class App:
                         st.success("Data berhasil diperbarui! Silakan cek menu Read.")
                         st.rerun()
 
-        # --- FITUR DELETE ---
         elif "Delete" in pilihan:
             st.subheader("🗑 Hapus Rencana Perjalanan")
             data = self.repo.load_data()
@@ -200,6 +184,7 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
 
 
