@@ -140,4 +140,3 @@ with tab4:
                         st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• *{a.name}* | Rp {a.cost:,.0f} | {a.duration} jam")
                 st.divider()
 
-
