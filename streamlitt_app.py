@@ -288,7 +288,8 @@ elif menu == "Tambah Destinasi":
     if not active_trips:
         st.warning("Tidak ada trip aktif. Silakan buat trip baru.")
     else:
-        trip_selected = st.selectbox(
+        trip_selected = st.selectbox()
             "Pilih Trip Aktif",
-            active_trips, )
+            active_trips, 
+
 
