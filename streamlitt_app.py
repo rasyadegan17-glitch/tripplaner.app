@@ -118,7 +118,7 @@ class TravelAppUI:
         st.markdown("### Pilihan utama untuk jelajahi dunia")
 
         # Menggunakan Tab untuk kategori utama
-        tab_pesawat, tab_kereta, tab_bus = st.tabs(["✈ Tiket Pesawat", "🚆 Tiket Kereta Api", "🚌 Tiket Bus & Travel"])
+        tab_pesawat, tab_kereta, tab_bus = st.tabs(["✈ Lewat Udara", "🚆 Pakai Kereta", "🚌 Naik Mobil"])
 
         # --- TAB 1: PESAWAT ---
         with tab_pesawat:
@@ -171,4 +171,5 @@ class TravelAppUI:
 if __name__ == "__main__":
     app = TravelAppUI()
     app.run()
+
 
