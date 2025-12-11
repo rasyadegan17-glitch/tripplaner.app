@@ -7,7 +7,7 @@ from datetime import datetime
 # Referensi: Slide 6 (Atribut, Setter/Getter, detail_text)
 # ==============================================================================
 class Planner:
-    def _init_(self, tujuan, tanggal, aktivitas):
+    def __init__(self, tujuan, tanggal, aktivitas):
         # Atribut Private (Slide 6) [cite: 32-33]
         self._tujuan = tujuan
         self._tanggal = tanggal # Disimpan sebagai String sesuai Slide 6
@@ -231,4 +231,5 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
