@@ -110,6 +110,9 @@ if menu == "Buat Trip":
 # ============================================
 #          TAMBAH DESTINASI KE TRIP
 # ============================================
+# ============================================
+#          TAMBAH DESTINASI KE TRIP
+# ============================================
 elif menu == "Tambah Destinasi":
     st.header("🏝 Tambah Destinasi")
     active_trips = user.get_active_trips() # Hanya bisa tambah ke trip aktif
@@ -117,6 +120,22 @@ elif menu == "Tambah Destinasi":
     if not active_trips:
         st.warning("Tidak ada trip aktif. Silakan buat trip baru.")
     else:
+        # PERBAIKAN DI SINI: Pastikan st.selectbox tertutup sempurna
         trip_selected = st.selectbox(
             "Pilih Trip Aktif",
             active_trips,
+            format_func=lambda t: f"{t.trip_id} - {t.title}"
+        )
+
+        with st.form("form_destinasi"):
+            name = st.text_input("Nama Destinasi")
+            loc = st.text_input("Lokasi")
+            submit = st.form_submit_button("Tambah Destinasi")
+
+            if submit:
+                if name and loc:
+                    d = Destination(name, loc)
+                    trip_selected.add_destination(d)
+                    st.success(f"Destinasi '{name}' ditambahkan ke {trip_selected.title}!")
+                else:
+                    st.warning("Isi data destinasi.")
