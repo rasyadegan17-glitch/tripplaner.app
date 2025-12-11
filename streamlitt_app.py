@@ -8,7 +8,7 @@ from datetime import datetime
 class Planner:
     # PERHATIKAN: Ada 2 garis bawah sebelum 'init' dan 2 sesudahnya.
     # def _init_ (bukan init)
-    def _init_(self, tujuan, tanggal, aktivitas):
+    def __init__(self, tujuan, tanggal, aktivitas):
         self._tujuan = tujuan
         self._tanggal = tanggal
         self.aktivitas = aktivitas
@@ -46,7 +46,7 @@ class Planner:
 # BAGIAN 2: CLASS MANAGEMENT (LOGIC)
 # ==============================================================================
 class Management:
-    def _init_(self):
+    def __init__(self):
         # Menggunakan Session State agar data tersimpan
         if 'daftar_rencana' not in st.session_state:
             st.session_state['daftar_rencana'] = []
@@ -69,7 +69,7 @@ class Management:
 # BAGIAN 3: CLASS PLANNER REPOSITORY (DATA LAYER)
 # ==============================================================================
 class PlannerRepository:
-    def _init_(self):
+    def __init__(self):
         self.management = Management()
 
     def load_data(self):
@@ -85,7 +85,7 @@ class PlannerRepository:
 # BAGIAN 4: CLASS APP (UI / TAMPILAN)
 # ==============================================================================
 class App:
-    def _init_(self):
+    def __init__(self):
         self.repo = PlannerRepository()
 
     def run(self):
@@ -204,6 +204,7 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
 
 
