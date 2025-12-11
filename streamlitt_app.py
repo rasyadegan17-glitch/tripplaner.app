@@ -1,238 +1,234 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
 
 # ==========================================
-# BAGIAN 1: STRUKTUR OOP (MODEL & LOGIC)
-# Mengacu pada konsep Class Planner  dan Management 
+# BAGIAN 1: STRUKTUR OOP (MODEL)
+# Sesuai Slide 6 (Class Planner)
 # ==========================================
 
-class TransportBooking:
+class Planner:
     """
-    Parent Class (Kelas Induk).
-    Menyimpan atribut dasar transportasi sesuai dokumen PDF (Planner).
+    Merepresentasikan satu rencana perjalanan (Source: Slide 6)
     """
-    def _init_(self, booking_type, sub_type):
-        self.booking_type = booking_type # e.g., Pesawat
-        self.sub_type = sub_type         # e.g., Domestik
-        self.origin = ""
-        self.destination = ""
-        self.depart_date = date.today()
-        self.return_date = None
-        self.passengers = 1
+    def _init_(self, tujuan, tanggal, aktivitas):
+        # Atribut Private (sesuai konvensi Python _var) - Source: Slide 6 (Atribut)
+        self._tujuan = tujuan       # String, wajib ada
+        self._tanggal = tanggal     # String, tidak boleh kosong
+        self.aktivitas = aktivitas  # String, kegiatan utama
 
-    def set_details(self, origin, destination, dates, passengers):
-        """Setter untuk mengisi data perjalanan [cite: 27]"""
-        self.origin = origin
-        self.destination = destination
-        self.passengers = passengers
-        
-        # Logika menangani tanggal (sekali jalan vs pulang pergi)
-        if isinstance(dates, tuple) and len(dates) == 2:
-            self.depart_date = dates[0]
-            self.return_date = dates[1]
-        elif isinstance(dates, tuple) and len(dates) == 1:
-            self.depart_date = dates[0]
-            self.return_date = None
-        else:
-            self.depart_date = dates
-            self.return_date = None
+    # --- Getters & Setters (Source: Slide 6) ---
+    @property
+    def tujuan(self):
+        return self._tujuan
+
+    @tujuan.setter
+    def tujuan(self, value):
+        if value:
+            self._tujuan = value
+
+    @property
+    def tanggal(self):
+        return self._tanggal
+
+    @tanggal.setter
+    def tanggal(self, value):
+        if value:
+            self._tanggal = value
+
+    def detail_text(self, qty_hari=1):
+        """
+        Menghasilkan ringkasan perjalanan.
+        (Source: Slide 6 - detail_text())
+        """
+        return f"Trip ke {self._tujuan} pada {self._tanggal}. Aktivitas utama: {self.aktivitas}."
 
     def to_dict(self):
-        """Helper untuk mengubah objek menjadi dictionary (untuk DataFrame)"""
-        tgl = f"{self.depart_date}"
-        if self.return_date:
-            tgl += f" - {self.return_date}"
-        
+        """Helper untuk menampilkan data di Streamlit DataFrame"""
         return {
-            "Jenis": self.booking_type,
-            "Tipe": self.sub_type,
-            "Rute": f"{self.origin} -> {self.destination}",
-            "Tanggal": tgl,
-            "Penumpang": self.passengers
+            "Tujuan": self._tujuan,
+            "Tanggal": self._tanggal,
+            "Aktivitas": self.aktivitas
         }
 
-class BookingManager:
-    """
-    Class Management 
-    Bertugas mengelola kumpulan rencana perjalanan (CRUD).
-    """
-    def _init_(self):
-        # Menggunakan Session State agar data tidak hilang saat reload
-        if 'bookings' not in st.session_state:
-            st.session_state['bookings'] = []
-
-    def add_booking(self, booking_obj):
-        """Fitur Create: Menambah aktivitas Trip [cite: 15]"""
-        st.session_state['bookings'].append(booking_obj)
-
-    def get_all_bookings(self):
-        """Fitur Read: Melihat Trip Sebelumnya [cite: 16]"""
-        return st.session_state['bookings']
-    
-    def delete_booking(self, index):
-        """Fitur Delete: Hapus rencana Trip [cite: 18]"""
-        if 0 <= index < len(st.session_state['bookings']):
-            st.session_state['bookings'].pop(index)
-
 # ==========================================
-# BAGIAN 2: UI & LOGIC (VIEW CONTROLLER)
-# Mengacu pada Class App 
+# BAGIAN 2: LOGIC (MANAGEMENT)
+# Sesuai Slide 7 (Class Management)
 # ==========================================
 
-class TravelAppUI:
-    """Class untuk mengatur Tampilan Antarmuka Streamlit"""
-    
+class Management:
+    """
+    Bertugas mengelola kumpulan rencana perjalanan.
+    (Source: Slide 7)
+    """
     def _init_(self):
-        self.manager = BookingManager() # Inisialisasi Manager
-        self.apply_custom_style()
+        # Atribut: daftar_rencana (list) - Source: Slide 7
+        if 'daftar_rencana' not in st.session_state:
+            st.session_state['daftar_rencana'] = []
 
-    def apply_custom_style(self):
-        """Menambahkan CSS untuk background Orange Gradiasi & Style Traveloka"""
-        st.markdown(
-            """
-            <style>
-            .stApp {
-                background: linear-gradient(to right, #00C6FB, #005BEA); /* Biru Traveloka */
-                background: linear-gradient(to right, #ff7e5f, #feb47b); /* Request User: Oren */
-                color: black;
-            }
-            /* Styling Tab agar terlihat rapi */
-            .stTabs [data-baseweb="tab-list"] {
-                gap: 10px;
-                background-color: rgba(255,255,255, 0.2);
-                padding: 10px;
-                border-radius: 10px;
-            }
-            .stTabs [data-baseweb="tab"] {
-                background-color: white;
-                border-radius: 5px;
-                padding: 10px 20px;
-                color: #ff7e5f;
-                font-weight: bold;
-            }
-            .stTabs [aria-selected="true"] {
-                background-color: #e65100 !important;
-                color: white !important;
-            }
-            /* Styling Container form input */
-            div[data-testid="stVerticalBlockBorderWrapper"] {
-                background-color: rgba(255, 255, 255, 0.95);
-                border-radius: 10px;
-                padding: 20px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+    def tambah_rencana(self, rencana):
+        """Create: Tambah aktivitas Trip (Source: Slide 4 & 7)"""
+        st.session_state['daftar_rencana'].append(rencana)
 
-    def render_common_inputs(self, key_prefix):
-        """
-        Input form standar (Asal, Tujuan, Tanggal, Penumpang).
-        Digunakan ulang untuk semua tab (DRY Principle).
-        """
-        col1, col2 = st.columns(2)
-        with col1:
-            origin = st.text_input("Dari", placeholder="Asal (e.g. Jakarta)", key=f"{key_prefix}_org")
-        with col2:
-            dest = st.text_input("Ke", placeholder="Tujuan (e.g. Bali)", key=f"{key_prefix}_dest")
+    def lihat_semua(self):
+        """Read: Melihat Trip Sebelumnya (Source: Slide 4 & 7)"""
+        return st.session_state['daftar_rencana']
 
-        col3, col4 = st.columns(2)
-        with col3:
-            travel_dates = st.date_input(
-                "Tanggal Pergi & Pulang",
-                (date.today(), date.today() + timedelta(days=3)),
-                key=f"{key_prefix}_date"
-            )
-        with col4:
-            passengers = st.number_input("Jumlah Penumpang", min_value=1, max_value=10, value=1, key=f"{key_prefix}_pax")
+    def edit_rencana(self, index, rencana_baru):
+        """Update: Edit trip yang sedang dijalani (Source: Slide 4 & 7)"""
+        if 0 <= index < len(st.session_state['daftar_rencana']):
+            st.session_state['daftar_rencana'][index] = rencana_baru
 
-        return origin, dest, travel_dates, passengers
+    def hapus_rencana(self, index):
+        """Delete: Hapus rencana Trip (Source: Slide 4 & 7)"""
+        if 0 <= index < len(st.session_state['daftar_rencana']):
+            st.session_state['daftar_rencana'].pop(index)
+
+# ==========================================
+# BAGIAN 3: DATA LAYER (REPOSITORY)
+# Sesuai Slide 8 & 9 (Class PlannerRepository)
+# ==========================================
+
+class PlannerRepository:
+    """
+    Bertugas sebagai pengelola data (Data Manager).
+    Jembatan antara App dan Management.
+    (Source: Slide 8)
+    """
+    def _init_(self):
+        self.management = Management()
+
+    def load_data(self):
+        """Mengambil data (Source: Slide 9)"""
+        # Dalam konteks Streamlit, data sudah ada di session_state via Management
+        return self.management.lihat_semua()
+
+    def save_data(self, planner_obj):
+        """Menyimpan perubahan (Source: Slide 9)"""
+        self.management.tambah_rencana(planner_obj)
+
+    def get_planner(self):
+        """Mengembalikan objek planner (Source: Slide 9)"""
+        return self.management
+
+# ==========================================
+# BAGIAN 4: UI (APP)
+# Sesuai Slide 10 (Class App)
+# ==========================================
+
+class App:
+    """
+    Main Class untuk menjalankan aplikasi.
+    (Source: Slide 10)
+    """
+    def _init_(self):
+        self.repo = PlannerRepository() # Atribut Planner Repository (Source: Slide 10)
 
     def run(self):
-        """Fungsi Utama (Main Loop) [cite: 78]"""
+        """Menjalankan alur utama program (Source: Slide 10)"""
+        st.set_page_config(page_title="EasyTrip Group 1", page_icon="✈")
         
-        # Header Aplikasi
-        col_logo, col_title = st.columns([1, 5])
-        with col_title:
-            st.title("🕊 TravelPlanner")
-            st.markdown("### Pilihan utama untuk jelajahi dunia")
+        st.title("✈ EASYTRIP")
+        st.write("Aplikasi Perencanaan perjalanan sederhana berbasis Python. (Source: Slide 3)")
+        
+        self.tampilkan_menu()
 
-        # Tab Navigasi Utama (Pesawat, Kereta, Bus, Riwayat)
-        tab_pesawat, tab_kereta, tab_bus, tab_history = st.tabs(
-            ["✈ Tiket Pesawat", "🚆 Tiket Kereta Api", "🚌 Bus & Travel", "📜 Pesanan Saya"]
+    def tampilkan_menu(self):
+        """Menampilkan menu interaksi (Source: Slide 10)"""
+        # Menu sesuai Fitur CRUD di Slide 4
+        menu = st.sidebar.selectbox(
+            "Menu Utama",
+            ["Create (Tambah Trip)", "Read (Lihat Trip)", "Update (Edit Trip)", "Delete (Hapus Trip)"]
         )
+        
+        self.proses_pilihan(menu)
 
-        # --- TAB 1: PESAWAT ---
-        with tab_pesawat:
-            with st.container(border=True):
-                st.subheader("Cari Penerbangan")
-                flight_type = st.radio("Tipe:", ["Domestic", "International"], horizontal=True)
-                st.divider()
-                origin, dest, dates, pax = self.render_common_inputs("flight")
-                
-                if st.button("Cari & Pesan Pesawat", type="primary"):
-                    booking = TransportBooking("Pesawat", flight_type)
-                    booking.set_details(origin, dest, dates, pax)
-                    self.manager.add_booking(booking) # Simpan ke Management [cite: 49]
-                    st.success("Berhasil ditambahkan ke Pesanan Saya!")
-
-        # --- TAB 2: KERETA API ---
-        with tab_kereta:
-            with st.container(border=True):
-                st.subheader("Cari Kereta Api")
-                train_type = st.radio("Kelas:", ["Ekonomi", "Bisnis", "Eksekutif", "Luxury"], horizontal=True)
-                st.divider()
-                origin, dest, dates, pax = self.render_common_inputs("train")
-                
-                if st.button("Cari & Pesan Kereta", type="primary"):
-                    booking = TransportBooking("Kereta Api", train_type)
-                    booking.set_details(origin, dest, dates, pax)
-                    self.manager.add_booking(booking)
-                    st.success("Berhasil ditambahkan ke Pesanan Saya!")
-
-        # --- TAB 3: BUS & TRAVEL ---
-        with tab_bus:
-            with st.container(border=True):
-                st.subheader("Cari Bus & Travel")
-                bus_type = st.radio("Tipe:", ["Bus Malam", "Shuttle DayTrans", "Airport Transfer"], horizontal=True)
-                st.divider()
-                origin, dest, dates, pax = self.render_common_inputs("bus")
-                
-                if st.button("Cari & Pesan Bus", type="primary"):
-                    booking = TransportBooking("Bus & Travel", bus_type)
-                    booking.set_details(origin, dest, dates, pax)
-                    self.manager.add_booking(booking)
-                    st.success("Berhasil ditambahkan ke Pesanan Saya!")
-
-        # --- TAB 4: PESANAN SAYA (Fitur Read/Delete PDF) [cite: 16, 18] ---
-        with tab_history:
-            st.subheader("Daftar Rencana Perjalanan")
-            all_bookings = self.manager.get_all_bookings()
+    def proses_pilihan(self, menu):
+        """Mengarahkan input user ke fungsi yang tepat (Source: Slide 10)"""
+        
+        # --- FITUR 1: CREATE (Source: Slide 4) ---
+        if menu == "Create (Tambah Trip)":
+            st.header("Tambah Rencana Baru")
+            input_tujuan = st.text_input("Tujuan Destinasi")
+            input_tanggal = st.date_input("Tanggal Perjalanan").strftime("%Y-%m-%d")
+            input_aktivitas = st.text_area("Aktivitas Utama")
             
-            if not all_bookings:
-                st.info("Belum ada pesanan. Silakan pesan tiket di tab lain.")
+            if st.button("Simpan Rencana"):
+                if input_tujuan and input_aktivitas:
+                    # Membuat Objek Planner Baru (Source: Slide 6)
+                    rencana_baru = Planner(input_tujuan, input_tanggal, input_aktivitas)
+                    # Menyimpan via Repository (Source: Slide 8)
+                    self.repo.save_data(rencana_baru)
+                    st.success("Rencana perjalanan berhasil disimpan!")
+                else:
+                    st.error("Tujuan dan Aktivitas tidak boleh kosong!")
+
+        # --- FITUR 2: READ (Source: Slide 4) ---
+        elif menu == "Read (Lihat Trip)":
+            st.header("Daftar Rencana Perjalanan")
+            data_trip = self.repo.load_data()
+            
+            if not data_trip:
+                st.info("Belum ada rencana perjalanan.")
             else:
-                # Menampilkan Data dalam Tabel
-                data_list = [b.to_dict() for b in all_bookings]
-                df = pd.DataFrame(data_list)
-                st.dataframe(df, use_container_width=True)
+                # Menampilkan data dalam bentuk Tabel
+                list_data = [item.to_dict() for item in data_trip]
+                st.table(pd.DataFrame(list_data))
+                
+                # Menampilkan detail text method dari Class Planner (Source: Slide 6)
+                st.subheader("Detail Log:")
+                for i, item in enumerate(data_trip):
+                    st.text(f"{i+1}. {item.detail_text()}")
 
-                st.divider()
-                # Fitur Hapus [cite: 53]
-                st.write("Kelola Pesanan:")
-                col_del1, col_del2 = st.columns([3, 1])
-                with col_del1:
-                    idx_to_del = st.number_input("Pilih Index (Baris) untuk dihapus", min_value=0, max_value=len(all_bookings)-1 if len(all_bookings)>0 else 0, step=1)
-                with col_del2:
-                    if st.button("Hapus Pesanan"):
-                        self.manager.delete_booking(idx_to_del)
-                        st.rerun()
+        # --- FITUR 3: UPDATE (Source: Slide 4) ---
+        elif menu == "Update (Edit Trip)":
+            st.header("Edit Rencana Perjalanan")
+            data_trip = self.repo.load_data()
+            
+            if not data_trip:
+                st.warning("Tidak ada data untuk diedit.")
+                return
+
+            # Pilih data berdasarkan index
+            pilihan_index = st.selectbox("Pilih Trip untuk diedit", range(len(data_trip)), format_func=lambda x: data_trip[x].tujuan)
+            objek_lama = data_trip[pilihan_index]
+
+            st.write("--- Edit Data ---")
+            # Form Edit
+            edit_tujuan = st.text_input("Edit Tujuan", value=objek_lama.tujuan)
+            edit_tanggal = st.text_input("Edit Tanggal (YYYY-MM-DD)", value=objek_lama.tanggal)
+            edit_aktivitas = st.text_area("Edit Aktivitas", value=objek_lama.aktivitas)
+
+            if st.button("Update Rencana"):
+                # Update Objek Planner
+                rencana_update = Planner(edit_tujuan, edit_tanggal, edit_aktivitas)
+                # Panggil method edit di management
+                self.repo.get_planner().edit_rencana(pilihan_index, rencana_update)
+                st.success("Data berhasil diperbarui!")
+                st.rerun()
+
+        # --- FITUR 4: DELETE (Source: Slide 4) ---
+        elif menu == "Delete (Hapus Trip)":
+            st.header("Hapus Rencana Perjalanan")
+            data_trip = self.repo.load_data()
+            
+            if not data_trip:
+                st.warning("Tidak ada data untuk dihapus.")
+                return
+
+            # Pilih data berdasarkan index
+            pilihan_index = st.selectbox("Pilih Trip untuk dihapus", range(len(data_trip)), format_func=lambda x: data_trip[x].tujuan)
+            
+            st.warning(f"Apakah Anda yakin ingin menghapus trip ke {data_trip[pilihan_index].tujuan}?")
+            
+            if st.button("Hapus Permanen"):
+                # Panggil method hapus di management
+                self.repo.get_planner().hapus_rencana(pilihan_index)
+                st.success("Data berhasil dihapus.")
+                st.rerun()
 
 # ==========================================
-# EKSEKUSI PROGRAM
+# MAIN EXECUTION
 # ==========================================
-if __name__ == "__main__":
-    app = TravelAppUI()
+if _name_ == "_main_":
+    app = App()
     app.run()
