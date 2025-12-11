@@ -5,7 +5,7 @@ import streamlit as st
 # ============================================
 
 class Activity:
-    # Perbaikan: Menggunakan _init_ (double underscore)
+    # PERHATIKAN: Ada dua garis bawah di kiri dan kanan 'init'
     def _init_(self, name, cost, duration):
         self.name = name
         self.cost = cost
@@ -36,7 +36,7 @@ class Trip:
         self.trip_id = trip_id
         self.title = title
         self.destinations = []
-        self.is_completed = False  # Status: False = Aktif, True = History
+        self.is_completed = False
 
     def add_destination(self, destination):
         self.destinations.append(destination)
@@ -49,7 +49,7 @@ class Trip:
 
 
 class User:
-    # Perbaikan: Menggunakan _init_ agar bisa menerima nama "Pengguna"
+    # PERHATIKAN: Pastikan ini _init_ (dua garis bawah), bukan init
     def _init_(self, name):
         self.name = name
         self.trips = []
@@ -57,11 +57,9 @@ class User:
     def add_trip(self, trip):
         self.trips.append(trip)
     
-    # Filter trip yang masih aktif
     def get_active_trips(self):
         return [t for t in self.trips if not t.is_completed]
 
-    # Filter trip yang sudah selesai (history)
     def get_history_trips(self):
         return [t for t in self.trips if t.is_completed]
 
@@ -70,9 +68,17 @@ class User:
 #           STREAMLIT STATE MANAGEMENT
 # ============================================
 
-# Menginisialisasi user jika belum ada di session
+# Pastikan session state di-reset jika terjadi error struktur class sebelumnya
 if "user" not in st.session_state:
-    st.session_state.user = User("Pengguna")
+    try:
+        # Mencoba membuat user baru
+        st.session_state.user = User("Pengguna")
+    except TypeError:
+        # Jika error, paksa clear session dan ulang (hack untuk fix cache)
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.session_state.clear()
+        st.session_state.user = User("Pengguna")
 
 user = st.session_state.user
 
@@ -101,7 +107,6 @@ if menu == "Buat Trip":
 
         if submit:
             if trip_id and title:
-                # Cek apakah ID sudah ada
                 if any(t.trip_id == trip_id for t in user.trips):
                     st.error("ID Trip sudah digunakan, mohon pakai ID lain.")
                 else:
@@ -122,7 +127,6 @@ elif menu == "Tambah Destinasi":
     if not active_trips:
         st.warning("Tidak ada trip aktif. Silakan buat trip baru dulu.")
     else:
-        # Dropdown memilih trip
         trip_selected = st.selectbox(
             "Pilih Trip Aktif",
             active_trips,
@@ -153,7 +157,6 @@ elif menu == "Tambah Aktivitas":
     if not active_trips:
         st.warning("Tidak ada trip aktif.")
     else:
-        # Pilih Trip
         trip_selected = st.selectbox(
             "Pilih Trip",
             active_trips,
@@ -163,7 +166,6 @@ elif menu == "Tambah Aktivitas":
         if not trip_selected.destinations:
             st.warning("Trip ini belum punya destinasi. Tambahkan destinasi dulu.")
         else:
-            # Pilih Destinasi
             dest_selected = st.selectbox(
                 "Pilih Destinasi",
                 trip_selected.destinations,
@@ -196,7 +198,6 @@ elif menu == "Lihat Trip Aktif":
         st.info("Tidak ada trip yang sedang aktif.")
     else:
         for t in active_trips:
-            # Tampilan kartu trip
             with st.expander(f"🧳 {t.title} (ID: {t.trip_id})", expanded=True):
                 st.write(f"*Total Biaya Estimasi: Rp{t.total_trip_cost():,}*")
                 
@@ -210,12 +211,8 @@ elif menu == "Lihat Trip Aktif":
                 
                 st.divider()
                 
-                # Tombol untuk menyelesaikan trip
                 col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.caption("Jika trip sudah selesai, klik tombol di kanan.")
                 with col2:
-                    # Kunci (key) harus unik
                     if st.button(f"✅ Selesai", key=f"finish_{t.trip_id}"):
                         t.mark_as_completed()
                         st.success("Trip dipindahkan ke Riwayat!")
@@ -232,7 +229,6 @@ elif menu == "Riwayat Trip":
     if not history_trips:
         st.info("Belum ada trip yang selesai.")
     else:
-        # Tabel Ringkasan
         data_summary = []
         for t in history_trips:
             data_summary.append({
