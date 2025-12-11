@@ -92,7 +92,6 @@ class App:
         st.set_page_config(page_title="EasyTrip Planner", page_icon="✈", layout="wide")
         
         st.title("✈ EasyTrip: Trip Planner")
-        st.markdown("Aplikasi Perencanaan Perjalanan Sederhana Berbasis Python (Kelompok 1)")
         st.write("---")
 
         self.tampilkan_menu()
@@ -204,6 +203,7 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
 
 
