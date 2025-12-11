@@ -168,6 +168,7 @@ class TravelAppUI:
                 booking.display_ticket_summary()
 
 # --- MAIN EXECUTION ---
-if _name_ == "_main_":
+if __name__ == "__main__":
     app = TravelAppUI()
     app.run()
+
