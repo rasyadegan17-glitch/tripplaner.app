@@ -128,7 +128,6 @@ class App:
         st.set_page_config(page_title="EasyTrip Group 1", page_icon="✈")
         
         st.title("✈ EASYTRIP")
-        st.write("Aplikasi Perencanaan perjalanan sederhana berbasis Python. (Source: Slide 3)")
         
         self.tampilkan_menu()
 
@@ -232,4 +231,5 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
