@@ -181,4 +181,3 @@ elif menu == "Lihat Trip":
 
             st.info(f"Total biaya trip: **Rp{t.total_trip_cost()}**")
 
-
