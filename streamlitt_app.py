@@ -1,22 +1,19 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
-# ==========================================
-# BAGIAN 1: STRUKTUR OOP (MODEL)
-# Sesuai Slide 6 (Class Planner)
-# ==========================================
-
+# ==============================================================================
+# BAGIAN 1: CLASS PLANNER (MODEL)
+# Referensi: Slide 6 (Atribut, Setter/Getter, detail_text)
+# ==============================================================================
 class Planner:
-    """
-    Merepresentasikan satu rencana perjalanan (Source: Slide 6)
-    """
     def _init_(self, tujuan, tanggal, aktivitas):
-        # Atribut Private (sesuai konvensi Python _var) - Source: Slide 6 (Atribut)
-        self._tujuan = tujuan       # String, wajib ada
-        self._tanggal = tanggal     # String, tidak boleh kosong
-        self.aktivitas = aktivitas  # String, kegiatan utama
+        # Atribut Private (Slide 6) [cite: 32-33]
+        self._tujuan = tujuan
+        self._tanggal = tanggal # Disimpan sebagai String sesuai Slide 6
+        self.aktivitas = aktivitas
 
-    # --- Getters & Setters (Source: Slide 6) ---
+    # --- Getters & Setters (Slide 6) [cite: 27, 34-35] ---
     @property
     def tujuan(self):
         return self._tujuan
@@ -35,201 +32,203 @@ class Planner:
         if value:
             self._tanggal = value
 
-    def detail_text(self, qty_hari=1):
-        """
-        Menghasilkan ringkasan perjalanan.
-        (Source: Slide 6 - detail_text())
-        """
-        return f"Trip ke {self._tujuan} pada {self._tanggal}. Aktivitas utama: {self.aktivitas}."
+    def detail_text(self):
+        """Menghasilkan ringkasan perjalanan (Slide 6) [cite: 28, 36]"""
+        return f"Perjalanan ke {self.tujuan} pada tanggal {self.tanggal}. Kegiatan: {self.aktivitas}."
 
     def to_dict(self):
-        """Helper untuk menampilkan data di Streamlit DataFrame"""
+        """Helper untuk mengubah objek menjadi data yang bisa dibaca DataFrame"""
         return {
-            "Tujuan": self._tujuan,
-            "Tanggal": self._tanggal,
+            "Tujuan": self.tujuan,
+            "Tanggal": self.tanggal,
             "Aktivitas": self.aktivitas
         }
 
-# ==========================================
-# BAGIAN 2: LOGIC (MANAGEMENT)
-# Sesuai Slide 7 (Class Management)
-# ==========================================
-
+# ==============================================================================
+# BAGIAN 2: CLASS MANAGEMENT (LOGIC)
+# Referensi: Slide 7 (Mengelola kumpulan rencana)
+# ==============================================================================
 class Management:
-    """
-    Bertugas mengelola kumpulan rencana perjalanan.
-    (Source: Slide 7)
-    """
     def _init_(self):
-        # Atribut: daftar_rencana (list) - Source: Slide 7
+        # Inisialisasi list penyimpanan di Session State agar data AWET (Persistent)
+        # Ini implementasi dari 'Daftar_rencana' (Slide 7) [cite: 40, 47]
         if 'daftar_rencana' not in st.session_state:
             st.session_state['daftar_rencana'] = []
 
     def tambah_rencana(self, rencana):
-        """Create: Tambah aktivitas Trip (Source: Slide 4 & 7)"""
+        """Create: Menambahkan rencana (Slide 7) [cite: 41, 49]"""
         st.session_state['daftar_rencana'].append(rencana)
 
     def lihat_semua(self):
-        """Read: Melihat Trip Sebelumnya (Source: Slide 4 & 7)"""
+        """Read: Menampilkan seluruh rencana (Slide 7) [cite: 42, 51]"""
         return st.session_state['daftar_rencana']
 
     def edit_rencana(self, index, rencana_baru):
-        """Update: Edit trip yang sedang dijalani (Source: Slide 4 & 7)"""
+        """Update: Mengedit rencana berdasarkan index (Slide 7) [cite: 43, 52]"""
         if 0 <= index < len(st.session_state['daftar_rencana']):
             st.session_state['daftar_rencana'][index] = rencana_baru
 
     def hapus_rencana(self, index):
-        """Delete: Hapus rencana Trip (Source: Slide 4 & 7)"""
+        """Delete: Menghapus rencana tertentu (Slide 7) [cite: 44, 53]"""
         if 0 <= index < len(st.session_state['daftar_rencana']):
             st.session_state['daftar_rencana'].pop(index)
 
-# ==========================================
-# BAGIAN 3: DATA LAYER (REPOSITORY)
-# Sesuai Slide 8 & 9 (Class PlannerRepository)
-# ==========================================
-
+# ==============================================================================
+# BAGIAN 3: CLASS PLANNER REPOSITORY (DATA LAYER)
+# Referensi: Slide 8-9 (Jembatan antara App dan Management)
+# ==============================================================================
 class PlannerRepository:
-    """
-    Bertugas sebagai pengelola data (Data Manager).
-    Jembatan antara App dan Management.
-    (Source: Slide 8)
-    """
     def _init_(self):
+        # Repository memiliki atribut management (Slide 9) [cite: 72]
         self.management = Management()
 
     def load_data(self):
-        """Mengambil data (Source: Slide 9)"""
-        # Dalam konteks Streamlit, data sudah ada di session_state via Management
+        """Mengambil data (Slide 8 & 9) [cite: 58, 73]"""
         return self.management.lihat_semua()
 
     def save_data(self, planner_obj):
-        """Menyimpan perubahan (Source: Slide 9)"""
+        """Menyimpan data (Slide 8 & 9) [cite: 59, 74]"""
         self.management.tambah_rencana(planner_obj)
 
     def get_planner(self):
-        """Mengembalikan objek planner (Source: Slide 9)"""
+        """Mengakses objek management (Slide 8 & 9) [cite: 60, 75]"""
         return self.management
 
-# ==========================================
-# BAGIAN 4: UI (APP)
-# Sesuai Slide 10 (Class App)
-# ==========================================
-
+# ==============================================================================
+# BAGIAN 4: CLASS APP (UI / TAMPILAN)
+# Referensi: Slide 10 (Menu, Run, Input User)
+# ==============================================================================
 class App:
-    """
-    Main Class untuk menjalankan aplikasi.
-    (Source: Slide 10)
-    """
     def _init_(self):
-        self.repo = PlannerRepository() # Atribut Planner Repository (Source: Slide 10)
+        # Atribut Planner Repository sebagai sumber data (Slide 10) [cite: 78]
+        self.repo = PlannerRepository()
 
     def run(self):
-        """Menjalankan alur utama program (Source: Slide 10)"""
-        st.set_page_config(page_title="EasyTrip Group 1", page_icon="✈")
+        """Menjalankan alur utama program (Slide 10) [cite: 80]"""
+        st.set_page_config(page_title="EasyTrip Planner", page_icon="✈", layout="wide")
         
-        st.title("✈ EASYTRIP")
-        
+        # Header Tampilan
+        st.title("✈ EasyTrip: Trip Planner")
+        st.markdown("Aplikasi Perencanaan Perjalanan Sederhana Berbasis Python (Kelompok 1)")
+        st.write("---")
+
         self.tampilkan_menu()
 
     def tampilkan_menu(self):
-        """Menampilkan menu interaksi (Source: Slide 10)"""
-        # Menu sesuai Fitur CRUD di Slide 4
-        menu = st.sidebar.selectbox(
-            "Menu Utama",
-            ["Create (Tambah Trip)", "Read (Lihat Trip)", "Update (Edit Trip)", "Delete (Hapus Trip)"]
-        )
+        """Menampilkan menu interaksi (Slide 10) [cite: 81]"""
+        with st.sidebar:
+            st.header("Menu Navigasi")
+            # Pilihan menu sesuai 4 operasi dasar CRUD (Slide 4) [cite: 14]
+            pilihan = st.radio(
+                "Pilih Aksi:",
+                ["1. Create (Tambah Trip)", 
+                 "2. Read (Lihat Trip)", 
+                 "3. Update (Edit Trip)", 
+                 "4. Delete (Hapus Trip)"]
+            )
         
-        self.proses_pilihan(menu)
+        self.proses_pilihan(pilihan)
 
-    def proses_pilihan(self, menu):
-        """Mengarahkan input user ke fungsi yang tepat (Source: Slide 10)"""
+    def proses_pilihan(self, pilihan):
+        """Logika untuk memproses input user (Slide 10) [cite: 83]"""
         
-        # --- FITUR 1: CREATE (Source: Slide 4) ---
-        if menu == "Create (Tambah Trip)":
-            st.header("Tambah Rencana Baru")
-            input_tujuan = st.text_input("Tujuan Destinasi")
-            input_tanggal = st.date_input("Tanggal Perjalanan").strftime("%Y-%m-%d")
-            input_aktivitas = st.text_area("Aktivitas Utama")
-            
-            if st.button("Simpan Rencana"):
-                if input_tujuan and input_aktivitas:
-                    # Membuat Objek Planner Baru (Source: Slide 6)
-                    rencana_baru = Planner(input_tujuan, input_tanggal, input_aktivitas)
-                    # Menyimpan via Repository (Source: Slide 8)
-                    self.repo.save_data(rencana_baru)
-                    st.success("Rencana perjalanan berhasil disimpan!")
-                else:
-                    st.error("Tujuan dan Aktivitas tidak boleh kosong!")
+        # --- FITUR CREATE (Tambah) ---
+        if "Create" in pilihan:
+            st.subheader("📝 Tambah Rencana Perjalanan Baru")
+            with st.form("form_tambah"):
+                in_tujuan = st.text_input("Tujuan Destinasi")
+                in_tanggal = st.date_input("Tanggal Keberangkatan")
+                in_aktivitas = st.text_area("Aktivitas Utama")
+                submit_btn = st.form_submit_button("Simpan Rencana")
 
-        # --- FITUR 2: READ (Source: Slide 4) ---
-        elif menu == "Read (Lihat Trip)":
-            st.header("Daftar Rencana Perjalanan")
-            data_trip = self.repo.load_data()
+                if submit_btn:
+                    if in_tujuan and in_aktivitas:
+                        # Konversi tanggal ke string agar sesuai atribut di Slide 6
+                        tgl_str = in_tanggal.strftime("%Y-%m-%d")
+                        # Buat Objek Planner
+                        obj_baru = Planner(in_tujuan, tgl_str, in_aktivitas)
+                        # Simpan lewat Repository
+                        self.repo.save_data(obj_baru)
+                        st.success(f"Berhasil menyimpan trip ke {in_tujuan}!")
+                    else:
+                        st.error("Mohon isi semua data (Tujuan & Aktivitas).")
+
+        # --- FITUR READ (Lihat) ---
+        elif "Read" in pilihan:
+            st.subheader("📋 Daftar Rencana Perjalanan Anda")
+            data = self.repo.load_data()
             
-            if not data_trip:
-                st.info("Belum ada rencana perjalanan.")
+            if not data:
+                st.info("Belum ada data trip. Silakan tambah data baru di menu Create.")
             else:
-                # Menampilkan data dalam bentuk Tabel
-                list_data = [item.to_dict() for item in data_trip]
-                st.table(pd.DataFrame(list_data))
+                # Tampilan Tabel Rapi
+                list_dict = [item.to_dict() for item in data]
+                st.dataframe(pd.DataFrame(list_dict), use_container_width=True)
                 
-                # Menampilkan detail text method dari Class Planner (Source: Slide 6)
-                st.subheader("Detail Log:")
-                for i, item in enumerate(data_trip):
-                    st.text(f"{i+1}. {item.detail_text()}")
+                # Tampilan Detail Text (Sesuai method di Slide 6)
+                with st.expander("Lihat Detail Deskripsi (Method OOP)"):
+                    for i, item in enumerate(data):
+                        st.write(f"*Trip #{i+1}:* {item.detail_text()}")
 
-        # --- FITUR 3: UPDATE (Source: Slide 4) ---
-        elif menu == "Update (Edit Trip)":
-            st.header("Edit Rencana Perjalanan")
-            data_trip = self.repo.load_data()
+        # --- FITUR UPDATE (Edit) ---
+        elif "Update" in pilihan:
+            st.subheader("✏ Edit Rencana Perjalanan")
+            data = self.repo.load_data()
             
-            if not data_trip:
+            if not data:
                 st.warning("Tidak ada data untuk diedit.")
-                return
+            else:
+                # Pilih data berdasarkan nama tujuan
+                list_nama = [f"{i+1}. {item.tujuan} ({item.tanggal})" for i, item in enumerate(data)]
+                pilihan_index = st.selectbox("Pilih Trip yang mau diedit:", range(len(data)), format_func=lambda x: list_nama[x])
+                
+                trip_lama = data[pilihan_index]
+                
+                st.write("---")
+                with st.form("form_edit"):
+                    edit_tujuan = st.text_input("Edit Tujuan", value=trip_lama.tujuan)
+                    # Konversi string tanggal kembali ke object date untuk default value picker
+                    try:
+                        def_date = datetime.strptime(trip_lama.tanggal, "%Y-%m-%d").date()
+                    except:
+                        def_date = datetime.today()
+                        
+                    edit_tanggal = st.date_input("Edit Tanggal", value=def_date)
+                    edit_aktivitas = st.text_area("Edit Aktivitas", value=trip_lama.aktivitas)
+                    
+                    update_btn = st.form_submit_button("Update Data")
+                    
+                    if update_btn:
+                        tgl_str_baru = edit_tanggal.strftime("%Y-%m-%d")
+                        trip_baru = Planner(edit_tujuan, tgl_str_baru, edit_aktivitas)
+                        
+                        # Update lewat Repository -> Management
+                        self.repo.get_planner().edit_rencana(pilihan_index, trip_baru)
+                        st.success("Data berhasil diperbarui! Silakan cek menu Read.")
+                        st.rerun() # Refresh halaman otomatis
 
-            # Pilih data berdasarkan index
-            pilihan_index = st.selectbox("Pilih Trip untuk diedit", range(len(data_trip)), format_func=lambda x: data_trip[x].tujuan)
-            objek_lama = data_trip[pilihan_index]
-
-            st.write("--- Edit Data ---")
-            # Form Edit
-            edit_tujuan = st.text_input("Edit Tujuan", value=objek_lama.tujuan)
-            edit_tanggal = st.text_input("Edit Tanggal (YYYY-MM-DD)", value=objek_lama.tanggal)
-            edit_aktivitas = st.text_area("Edit Aktivitas", value=objek_lama.aktivitas)
-
-            if st.button("Update Rencana"):
-                # Update Objek Planner
-                rencana_update = Planner(edit_tujuan, edit_tanggal, edit_aktivitas)
-                # Panggil method edit di management
-                self.repo.get_planner().edit_rencana(pilihan_index, rencana_update)
-                st.success("Data berhasil diperbarui!")
-                st.rerun()
-
-        # --- FITUR 4: DELETE (Source: Slide 4) ---
-        elif menu == "Delete (Hapus Trip)":
-            st.header("Hapus Rencana Perjalanan")
-            data_trip = self.repo.load_data()
+        # --- FITUR DELETE (Hapus) ---
+        elif "Delete" in pilihan:
+            st.subheader("🗑 Hapus Rencana Perjalanan")
+            data = self.repo.load_data()
             
-            if not data_trip:
+            if not data:
                 st.warning("Tidak ada data untuk dihapus.")
-                return
+            else:
+                list_nama = [f"{i+1}. {item.tujuan} ({item.tanggal})" for i, item in enumerate(data)]
+                idx_hapus = st.selectbox("Pilih Trip yang mau dihapus:", range(len(data)), format_func=lambda x: list_nama[x])
+                
+                st.write(f"Anda akan menghapus: *{data[idx_hapus].detail_text()}*")
+                
+                if st.button("Hapus Permanen", type="primary"):
+                    self.repo.get_planner().hapus_rencana(idx_hapus)
+                    st.success("Data telah dihapus.")
+                    st.rerun()
 
-            # Pilih data berdasarkan index
-            pilihan_index = st.selectbox("Pilih Trip untuk dihapus", range(len(data_trip)), format_func=lambda x: data_trip[x].tujuan)
-            
-            st.warning(f"Apakah Anda yakin ingin menghapus trip ke {data_trip[pilihan_index].tujuan}?")
-            
-            if st.button("Hapus Permanen"):
-                # Panggil method hapus di management
-                self.repo.get_planner().hapus_rencana(pilihan_index)
-                st.success("Data berhasil dihapus.")
-                st.rerun()
-
-# ==========================================
-# MAIN EXECUTION
-# ==========================================
+# ==============================================================================
+# MAIN PROGRAM
+# ==============================================================================
 if __name__ == "__main__":
     app = App()
     app.run()
-
 
