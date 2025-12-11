@@ -1,183 +1,128 @@
 import streamlit as st
+from dataclasses import dataclass, field
+from typing import List
 
 # ============================================
-#                 OOP CLASSES
+#             MODERN OOP (DATACLASS)
 # ============================================
 
+@dataclass
 class Activity:
-    def __init__(self, name, cost, duration):
-        self.name = name
-        self.cost = cost
-        self.duration = duration
+    name: str
+    cost: int
+    duration: float
 
-    def __str__(self):
-        return f"{self.name} - Rp{self.cost} ({self.duration} jam)"
-
-
+@dataclass
 class Destination:
-    def __init__(self, name, location):
-        self.name = name
-        self.location = location
-        self.activities = []
-
-    def add_activity(self, activity):
-        self.activities.append(activity)
+    name: str
+    location: str
+    activities: List[Activity] = field(default_factory=list)
 
     def total_cost(self):
         return sum(a.cost for a in self.activities)
 
-    def __str__(self):
-        return f"{self.name} - {self.location}"
-
-
+@dataclass
 class Trip:
-    def __init__(self, trip_id, title):
-        self.trip_id = trip_id
-        self.title = title
-        self.destinations = []
+    trip_id: str
+    title: str
+    destinations: List[Destination] = field(default_factory=list)
 
-    def add_destination(self, destination):
-        self.destinations.append(destination)
-
-    def total_trip_cost(self):
+    def total_cost(self):
         return sum(d.total_cost() for d in self.destinations)
 
-
-class User:
-    def __init__(self, name):
-        self.name = name
-        self.trips = []
-
-    def add_trip(self, trip):
-        self.trips.append(trip)
-
-
 # ============================================
-#          STREAMLIT STATE MANAGEMENT
+#             MAIN APP LOGIC
 # ============================================
 
-if "user" not in st.session_state:
-    st.session_state.user = User("User")
+# 1. State Management (Simpan data di memori)
+if "trips" not in st.session_state:
+    st.session_state.trips = []
 
+st.title("✈️ Trip Planner Sat-Set")
 
-user = st.session_state.user
+# 2. Sidebar Menu
+menu = st.sidebar.radio("Menu", ["Buat Trip", "Tambah Destinasi", "Tambah Aktivitas", "Lihat Trip"])
 
-st.title("🌍 Trip Planner Sederhana (Streamlit + OOP)")
-
-
-# ============================================
-#            MENU NAVIGASI
-# ============================================
-menu = st.sidebar.radio(
-    "Pilih Menu",
-    ["Buat Trip", "Tambah Destinasi", "Tambah Aktivitas", "Lihat Trip"]
-)
-
-# ============================================
-#              BUAT TRIP BARU
-# ============================================
+# --------------------------------------------
+# FITUR 1: BUAT TRIP
+# --------------------------------------------
 if menu == "Buat Trip":
-    st.header("➕ Buat Trip Baru")
+    st.subheader("Buat Trip Baru")
+    with st.form("new_trip"):
+        c1, c2 = st.columns(2)
+        tid = c1.text_input("ID Unik")
+        ttl = c2.text_input("Nama Trip")
+        if st.form_submit_button("Simpan") and tid and ttl:
+            st.session_state.trips.append(Trip(tid, ttl))
+            st.success(f"Trip '{ttl}' berhasil dibuat!")
 
-    with st.form("form_trip"):
-        trip_id = st.text_input("ID Trip")
-        title = st.text_input("Judul Trip")
-        submit = st.form_submit_button("Buat Trip")
-
-        if submit:
-            if trip_id and title:
-                new_trip = Trip(trip_id, title)
-                user.add_trip(new_trip)
-                st.success("Trip berhasil dibuat!")
-            else:
-                st.warning("Isi semua form dulu!")
-
-
-# ============================================
-#         TAMBAH DESTINASI KE TRIP
-# ============================================
+# --------------------------------------------
+# FITUR 2: TAMBAH DESTINASI
+# --------------------------------------------
 elif menu == "Tambah Destinasi":
-    st.header("🏝 Tambah Destinasi ke Trip")
+    st.subheader("Tambah Destinasi")
+    
+    if not st.session_state.trips:
+        st.warning("Buat Trip dulu!"); st.stop()
 
-    if not user.trips:
-        st.warning("Belum ada trip. Buat dulu di menu 'Buat Trip'.")
-    else:
-        trip_selected = st.selectbox(
-            "Pilih Trip",
-            user.trips,
-            format_func=lambda t: f"{t.trip_id} - {t.title}"
-        )
+    # Pilih Trip
+    trip = st.selectbox("Pilih Trip", st.session_state.trips, format_func=lambda t: t.title)
+    
+    with st.form("add_dest"):
+        c1, c2 = st.columns(2)
+        name = c1.text_input("Nama Tempat")
+        loc = c2.text_input("Lokasi / Kota")
+        
+        if st.form_submit_button("Tambah Destinasi") and name:
+            trip.destinations.append(Destination(name, loc))
+            st.success(f"{name} ditambahkan ke {trip.title}!")
 
-        with st.form("form_destinasi"):
-            name = st.text_input("Nama Destinasi")
-            loc = st.text_input("Lokasi")
-            submit = st.form_submit_button("Tambah Destinasi")
-
-            if submit:
-                d = Destination(name, loc)
-                trip_selected.add_destination(d)
-                st.success("Destinasi ditambahkan!")
-
-
-# ============================================
-#         TAMBAH AKTIVITAS KE DESTINASI
-# ============================================
+# --------------------------------------------
+# FITUR 3: TAMBAH AKTIVITAS
+# --------------------------------------------
 elif menu == "Tambah Aktivitas":
-    st.header("🎯 Tambah Aktivitas ke Destinasi")
+    st.subheader("Tambah Aktivitas")
 
-    if not user.trips:
-        st.warning("Belum ada trip.")
-    else:
-        trip_selected = st.selectbox(
-            "Pilih Trip",
-            user.trips,
-            format_func=lambda t: f"{t.trip_id} - {t.title}"
-        )
+    if not st.session_state.trips:
+        st.warning("Buat Trip dulu!"); st.stop()
 
-        if not trip_selected.destinations:
-            st.warning("Trip ini belum punya destinasi.")
-        else:
-            dest_selected = st.selectbox(
-                "Pilih Destinasi",
-                trip_selected.destinations,
-                format_func=lambda d: f"{d.name} - {d.location}"
-            )
+    # Logic: Pilih Trip -> Filter Destinasi -> Pilih Destinasi
+    trip = st.selectbox("Pilih Trip", st.session_state.trips, format_func=lambda t: t.title)
+    
+    if not trip.destinations:
+        st.warning("Trip ini belum punya destinasi!"); st.stop()
 
-            with st.form("form_aktivitas"):
-                name = st.text_input("Nama Aktivitas")
-                cost = st.number_input("Biaya", min_value=0)
-                duration = st.number_input("Durasi (jam)", min_value=0.0)
-                submit = st.form_submit_button("Tambah Aktivitas")
+    dest = st.selectbox("Pilih Destinasi", trip.destinations, format_func=lambda d: d.name)
 
-                if submit:
-                    act = Activity(name, cost, duration)
-                    dest_selected.add_activity(act)
-                    st.success("Aktivitas berhasil ditambahkan!")
+    with st.form("add_act"):
+        c1, c2, c3 = st.columns([2, 1, 1])
+        act_name = c1.text_input("Kegiatan")
+        biaya = c2.number_input("Biaya (Rp)", min_value=0, step=5000)
+        durasi = c3.number_input("Durasi (Jam)", min_value=0.5)
 
+        if st.form_submit_button("Simpan Aktivitas") and act_name:
+            dest.activities.append(Activity(act_name, biaya, durasi))
+            st.success("Aktivitas tersimpan!")
 
-# ============================================
-#               LIHAT SEMUA TRIP
-# ============================================
+# --------------------------------------------
+# FITUR 4: LIHAT SUMMARY
+# --------------------------------------------
 elif menu == "Lihat Trip":
-    st.header("📋 Daftar Trip")
-
-    if not user.trips:
-        st.warning("Belum ada trip.")
-    else:
-        for t in user.trips:
-            st.subheader(f"🧳 {t.title}")
-
-            if not t.destinations:
-                st.write("Belum ada destinasi.")
-            else:
-                for d in t.destinations:
-                    st.write(f"**{d.name}** – {d.location}")
-
-                    if not d.activities:
-                        st.write("• Belum ada aktivitas")
-                    else:
-                        for a in d.activities:
-                            st.write(f"• {a}")
-
-            st.info(f"Total biaya trip: **Rp{t.total_trip_cost()}**")
-
+    st.subheader("Rangkuman Perjalanan")
+    
+    if not st.session_state.trips:
+        st.info("Belum ada data perjalanan.")
+    
+    for trip in st.session_state.trips:
+        # Pakai Expander biar rapi (bisa di-collapse)
+        with st.expander(f"🗺️ {trip.title} (Total: Rp {trip.total_cost():,.0f})"):
+            st.caption(f"ID: {trip.trip_id}")
+            
+            if not trip.destinations:
+                st.write("*Belum ada destinasi*")
+            
+            for d in trip.destinations:
+                st.markdown(f"**📍 {d.name}** ({d.location}) - *Rp {d.total_cost():,.0f}*")
+                for a in d.activities:
+                    st.text(f"   • {a.name}: Rp {a.cost:,.0f} ({a.duration} jam)")
+                st.divider()
