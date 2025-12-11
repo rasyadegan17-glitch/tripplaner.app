@@ -1,6 +1,4 @@
-# =======================================================
-#        TRIP PLANNER SANGAT SEDERHANA (OOP DASAR)
-# =======================================================
+import streamlit as st
 
 # -----------------------
 # CLASS ACTIVITY
@@ -180,4 +178,5 @@ while True:
         break
     else:
         print("Pilihan tidak valid.")
+
 
