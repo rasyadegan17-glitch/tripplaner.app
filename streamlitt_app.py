@@ -6,7 +6,8 @@ from datetime import datetime
 # BAGIAN 1: CLASS PLANNER (MODEL)
 # ==============================================================================
 class Planner:
-    # PERBAIKAN PENTING: Gunakan _init_ (double underscore)
+    # PERHATIKAN: Ada 2 garis bawah sebelum 'init' dan 2 sesudahnya.
+    # def _init_ (bukan init)
     def _init_(self, tujuan, tanggal, aktivitas):
         self._tujuan = tujuan
         self._tanggal = tanggal
@@ -32,7 +33,6 @@ class Planner:
             self._tanggal = value
 
     def detail_text(self):
-        # Method untuk menampilkan detail text sesuai Slide 6
         return f"Perjalanan ke {self.tujuan} pada tanggal {self.tanggal}. Kegiatan: {self.aktivitas}."
 
     def to_dict(self):
@@ -46,9 +46,8 @@ class Planner:
 # BAGIAN 2: CLASS MANAGEMENT (LOGIC)
 # ==============================================================================
 class Management:
-    # PERBAIKAN PENTING: Gunakan _init_ (double underscore)
     def _init_(self):
-        # Menggunakan Session State agar data tersimpan saat tombol ditekan
+        # Menggunakan Session State agar data tersimpan
         if 'daftar_rencana' not in st.session_state:
             st.session_state['daftar_rencana'] = []
 
@@ -70,7 +69,6 @@ class Management:
 # BAGIAN 3: CLASS PLANNER REPOSITORY (DATA LAYER)
 # ==============================================================================
 class PlannerRepository:
-    # PERBAIKAN PENTING: Gunakan _init_ (double underscore)
     def _init_(self):
         self.management = Management()
 
@@ -87,7 +85,6 @@ class PlannerRepository:
 # BAGIAN 4: CLASS APP (UI / TAMPILAN)
 # ==============================================================================
 class App:
-    # PERBAIKAN PENTING: Gunakan _init_ (double underscore)
     def _init_(self):
         self.repo = PlannerRepository()
 
@@ -103,7 +100,6 @@ class App:
     def tampilkan_menu(self):
         with st.sidebar:
             st.header("Menu Navigasi")
-            # Menu sesuai CRUD dasar
             pilihan = st.radio(
                 "Pilih Aksi:",
                 ["1. Create (Tambah Trip)", 
@@ -115,11 +111,9 @@ class App:
         self.proses_pilihan(pilihan)
 
     def proses_pilihan(self, pilihan):
-        # --- FITUR CREATE (Input Data) ---
+        # --- FITUR CREATE ---
         if "Create" in pilihan:
             st.subheader("📝 Tambah Rencana Perjalanan Baru")
-            
-            # Form Input
             with st.form("form_tambah"):
                 in_tujuan = st.text_input("Tujuan Destinasi")
                 in_tanggal = st.date_input("Tanggal Keberangkatan")
@@ -130,19 +124,18 @@ class App:
                     if in_tujuan and in_aktivitas:
                         try:
                             tgl_str = in_tanggal.strftime("%Y-%m-%d")
-                            
-                            # DISINI ERROR ANDA SEBELUMNYA TERJADI
-                            # Sekarang sudah aman karena _init_ di class Planner sudah benar
+                            # Memanggil Class Planner dengan data
                             obj_baru = Planner(in_tujuan, tgl_str, in_aktivitas)
-                            
                             self.repo.save_data(obj_baru)
                             st.success(f"Berhasil menyimpan trip ke {in_tujuan}!")
+                        except TypeError as e:
+                            st.error(f"Error Coding: {e}. Cek kembali penulisan _init_ Anda.")
                         except Exception as e:
                             st.error(f"Terjadi kesalahan: {e}")
                     else:
                         st.error("Mohon isi semua data (Tujuan & Aktivitas).")
 
-        # --- FITUR READ (Lihat Data) ---
+        # --- FITUR READ ---
         elif "Read" in pilihan:
             st.subheader("📋 Daftar Rencana Perjalanan Anda")
             data = self.repo.load_data()
@@ -150,16 +143,14 @@ class App:
             if not data:
                 st.info("Belum ada data trip. Silakan tambah data baru di menu Create.")
             else:
-                # Menampilkan Tabel
                 list_dict = [item.to_dict() for item in data]
                 st.dataframe(pd.DataFrame(list_dict), use_container_width=True)
                 
-                # Menampilkan Detail Text
                 with st.expander("Lihat Detail Deskripsi (Method OOP)"):
                     for i, item in enumerate(data):
                         st.write(f"*Trip #{i+1}:* {item.detail_text()}")
 
-        # --- FITUR UPDATE (Edit Data) ---
+        # --- FITUR UPDATE ---
         elif "Update" in pilihan:
             st.subheader("✏ Edit Rencana Perjalanan")
             data = self.repo.load_data()
@@ -175,8 +166,6 @@ class App:
                 st.write("---")
                 with st.form("form_edit"):
                     edit_tujuan = st.text_input("Edit Tujuan", value=trip_lama.tujuan)
-                    
-                    # Handling konversi tanggal untuk default value
                     try:
                         def_date = datetime.strptime(trip_lama.tanggal, "%Y-%m-%d").date()
                     except:
@@ -190,12 +179,11 @@ class App:
                     if update_btn:
                         tgl_str_baru = edit_tanggal.strftime("%Y-%m-%d")
                         trip_baru = Planner(edit_tujuan, tgl_str_baru, edit_aktivitas)
-                        
                         self.repo.get_planner().edit_rencana(pilihan_index, trip_baru)
                         st.success("Data berhasil diperbarui! Silakan cek menu Read.")
                         st.rerun()
 
-        # --- FITUR DELETE (Hapus Data) ---
+        # --- FITUR DELETE ---
         elif "Delete" in pilihan:
             st.subheader("🗑 Hapus Rencana Perjalanan")
             data = self.repo.load_data()
@@ -213,11 +201,9 @@ class App:
                     st.success("Data telah dihapus.")
                     st.rerun()
 
-# ==============================================================================
-# MAIN PROGRAM
-# ==============================================================================
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
 
