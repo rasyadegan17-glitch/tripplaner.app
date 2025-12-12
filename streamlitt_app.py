@@ -38,7 +38,6 @@ class Planner:
 
 class Management:
     def __init__(self):
-        # Menggunakan Session State agar data tersimpan
         if 'daftar_rencana' not in st.session_state:
             st.session_state['daftar_rencana'] = []
 
@@ -184,6 +183,7 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
 
 
 
